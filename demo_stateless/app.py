@@ -5,6 +5,7 @@ from models.book import Book
 from models.user import User
 from models.loan import Loan
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity 
+from routes.auth_routes import auth_bp
 
 
 def create_app(config_object=Config):
@@ -22,6 +23,7 @@ def create_app(config_object=Config):
     app.register_blueprint(books_bp, url_prefix='/books')
     app.register_blueprint(users_bp, url_prefix='/users')
     app.register_blueprint(loans_bp, url_prefix='/loans')
+    app.register_blueprint(auth_bp, url_prefix="/auth")
 
     from utils.errors import register_error_handlers
     register_error_handlers(app)

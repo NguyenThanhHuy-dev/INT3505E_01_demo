@@ -1,13 +1,15 @@
 from flask import Blueprint, request, jsonify, url_for
 from services.loan_service import borrow_book, return_book, get_loan
 from utils.hateoas import generate_loan_links
+from utils.auth import require_token 
 
 loans_bp = Blueprint("loans_bp", __name__)
 
 @loans_bp.route("", methods=["POST"], endpoint="create_loan_route")
+@require_token
 def create_loan_route():
     data = request.get_json() or {}
-    user_id = data.get("user_id")
+    user_id = request.current_user.id  # Lấy từ token
     book_id = data.get("book_id")
     days = data.get("days", 14)
     
@@ -21,7 +23,9 @@ def create_loan_route():
         "_links": generate_loan_links(loan.id, user_id=loan.user_id, book_id=loan.book_id)
     }), 201
 
+
 @loans_bp.route("/<int:loan_id>/return", methods=["PUT"])
+@require_token
 def return_loan_route(loan_id):
     res = return_book(loan_id)
     if isinstance(res, dict) and "error" in res:
@@ -32,7 +36,9 @@ def return_loan_route(loan_id):
         "_links": generate_loan_links(res.id, user_id=res.user_id, book_id=res.book_id)
     }), 200
 
+
 @loans_bp.route("/<int:loan_id>", methods=["GET"])
+@require_token
 def get_loan_route(loan_id):
     loan = get_loan(loan_id)
     if not loan:
@@ -42,7 +48,9 @@ def get_loan_route(loan_id):
         "_links": generate_loan_links(loan.id, user_id=loan.user_id, book_id=loan.book_id)
     }), 200
 
+
 @loans_bp.route("", methods=["GET"])
+@require_token
 def list_loans():
     from models.loan import Loan
     loans = Loan.query.all()
