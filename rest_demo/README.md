@@ -1,6 +1,1 @@
-# soa_demo
-
-external, back_populates = giải thích 
-url_for = xóa ở model, chuyển các hàm ở routes về hateoas
-
-Thêm cacheable
+4 demo 3/4 nguyên tắc trong rest, ngoại trừ nguyên tắc stateless được demo ở folder khác

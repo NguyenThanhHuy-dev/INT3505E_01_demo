@@ -1,6 +1,3 @@
 # soa_demo
 
-external, back_populates = giải thích 
-url_for = xóa ở model, chuyển các hàm ở routes về hateoas
-
-Thêm cacheable
+Demo 3 cách phân trang với các endpoint riêng biệt, đáp ứng 3/4 quy tắc restful quang trọng được yêu cầu (ngoại trừ quy tắc stateless không được demo ở đây)
