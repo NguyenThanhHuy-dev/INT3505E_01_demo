@@ -4,13 +4,15 @@ from models.user import User
 from models.book import Book
 from datetime import datetime, timedelta
 
+from utils.errors import ConflictError, NotFoundError
+
 def borrow_book(user_id, book_id, days=14):
     user = User.query.get(user_id)
     book = Book.query.get(book_id)
     if not user or not book:
-        return {"error": "User or Book not found"}
+        raise NotFoundError("User or Book not found")
     if book.copies_available <= 0:
-        return {"error": "No copies available"}
+        raise ConflictError("No copies available")
     loan = Loan(user_id=user.id, book_id=book.id)
     loan.set_due_default(days)
     book.copies_available -= 1
@@ -21,9 +23,9 @@ def borrow_book(user_id, book_id, days=14):
 def return_book(loan_id):
     loan = Loan.query.get(loan_id)
     if not loan:
-        return {"error": "Loan not found"}
+        raise NotFoundError("Loan not found")
     if loan.status == "returned":
-        return {"error": "Already returned"}
+        raise ConflictError("Already returned")
 
     loan.returned_at = datetime.utcnow()
     loan.status = "overdue" if loan.is_overdue() else "returned"
@@ -37,4 +39,7 @@ def return_book(loan_id):
 
 
 def get_loan(loan_id):
-    return Loan.query.get(loan_id)
+    loan = Loan.query.get(loan_id)
+    if not loan:
+        raise NotFoundError("Loan not found")
+    return loan
