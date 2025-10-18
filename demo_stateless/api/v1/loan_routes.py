@@ -1,6 +1,6 @@
 # loan_routes.py
 from flask import Blueprint, request, jsonify
-from utils.hateoas import generate_loan_links
+from api.v1.hateoas import generate_loan_links
 from services.loan_service import (
     borrow_book as borrow_book_service,
     return_book as return_book_service,
@@ -8,7 +8,7 @@ from services.loan_service import (
 )
 from models.loan import Loan
 
-loans_bp = Blueprint("loans_bp", __name__)
+loans_bp = Blueprint("v1_loans_bp", __name__)
 
 @loans_bp.route("", methods=["POST"], endpoint="create_loan")
 def create_loan():

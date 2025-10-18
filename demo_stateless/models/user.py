@@ -1,7 +1,5 @@
-import secrets
 from database import db
 from datetime import datetime
-from utils.hateoas import generate_user_links
 
 class User(db.Model):
     __tablename__ = "users"

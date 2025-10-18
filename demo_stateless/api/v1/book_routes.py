@@ -1,7 +1,7 @@
 #book_routes.py
 from flask import Blueprint, make_response, request, jsonify, url_for
 from utils.cache import generate_etag
-from utils.hateoas import generate_book_links
+from api.v1.hateoas import generate_book_links
 from services.book_service import (
     create_book as create_book_service,
     get_books_paginated,
@@ -14,7 +14,7 @@ from services.book_service import (
 
 
 
-books_bp = Blueprint("books_bp", __name__)
+books_bp = Blueprint("v1_books_bp", __name__)
 
 @books_bp.route("", methods=["GET"], endpoint="list_books")
 def list_books():

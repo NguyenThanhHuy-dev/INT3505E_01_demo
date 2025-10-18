@@ -1,6 +1,5 @@
 from database import db
 from datetime import datetime
-from utils.hateoas import generate_book_links
 
 class Book(db.Model):
     __tablename__ = 'books'
