@@ -1,7 +1,18 @@
+#book_routes.py
 from flask import Blueprint, make_response, request, jsonify, url_for
-from services.book_service import create_book, get_books_paginated, get_book, update_book, delete_book, get_books_offset, get_books_cursor
 from utils.cache import generate_etag
 from utils.hateoas import generate_book_links
+from services.book_service import (
+    create_book as create_book_service,
+    get_books_paginated,
+    get_book as get_book_service,
+    update_book as update_book_service,
+    delete_book as delete_book_service,
+    get_books_offset,
+    get_books_cursor
+)
+
+
 
 books_bp = Blueprint("books_bp", __name__)
 
@@ -24,9 +35,9 @@ def list_books():
 
 
 @books_bp.route("", methods=["POST"], endpoint="create_book")
-def create_book_route():
+def create_book():
     data = request.get_json() or {}
-    book = create_book(data)
+    book = create_book_service(data)
     resp = {
         "message": "Book created",
         "book": book.to_dict(),
@@ -36,8 +47,8 @@ def create_book_route():
 
 
 @books_bp.route("/<int:book_id>", methods=["GET"], endpoint="get_book")
-def get_book_route(book_id):
-    book = get_book(book_id)
+def get_book(book_id):
+    book = get_book_service(book_id)
     if not book:
         return jsonify({"error": "Book not found"}), 404
     
@@ -95,9 +106,9 @@ def list_books_cursor():
 
 
 @books_bp.route("/<int:book_id>", methods=["PUT"], endpoint="update_book")
-def update_book_route(book_id):
+def update_book(book_id):
     data = request.get_json() or {}
-    book = update_book(book_id, data)
+    book = update_book_service(book_id, data)
     if not book:
         return jsonify({"error": "Book not found"}), 404
     return jsonify({
@@ -108,8 +119,8 @@ def update_book_route(book_id):
 
 
 @books_bp.route("/<int:book_id>", methods=["DELETE"], endpoint="delete_book")
-def delete_book_route(book_id):
-    ok = delete_book(book_id)
+def delete_book(book_id):
+    ok = delete_book_service(book_id)
     if not ok:
         return jsonify({"error": "Book not found"}), 404
     return jsonify({

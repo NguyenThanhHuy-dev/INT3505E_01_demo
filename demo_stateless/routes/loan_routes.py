@@ -1,19 +1,23 @@
-from flask import Blueprint, request, jsonify, url_for
-from services.loan_service import borrow_book, return_book, get_loan
+# loan_routes.py
+from flask import Blueprint, request, jsonify
 from utils.hateoas import generate_loan_links
-from utils.auth import require_token 
+from services.loan_service import (
+    borrow_book as borrow_book_service,
+    return_book as return_book_service,
+    get_loan as get_loan_service
+)
+from models.loan import Loan
 
 loans_bp = Blueprint("loans_bp", __name__)
 
-@loans_bp.route("", methods=["POST"], endpoint="create_loan_route")
-@require_token
-def create_loan_route():
+@loans_bp.route("", methods=["POST"], endpoint="create_loan")
+def create_loan():
     data = request.get_json() or {}
-    user_id = request.current_user.id  # Lấy từ token
+    user_id = data.get("user_id")
     book_id = data.get("book_id")
     days = data.get("days", 14)
-    
-    loan = borrow_book(user_id, book_id, days)
+
+    loan = borrow_book_service(user_id, book_id, days)
     if isinstance(loan, dict) and "error" in loan:
         return jsonify(loan), 400
 
@@ -24,10 +28,9 @@ def create_loan_route():
     }), 201
 
 
-@loans_bp.route("/<int:loan_id>/return", methods=["PUT"])
-@require_token
-def return_loan_route(loan_id):
-    res = return_book(loan_id)
+@loans_bp.route("/<int:loan_id>/return", methods=["PUT"], endpoint="return_loan")
+def return_loan(loan_id):
+    res = return_book_service(loan_id)
     if isinstance(res, dict) and "error" in res:
         return jsonify(res), 400
     return jsonify({
@@ -37,10 +40,9 @@ def return_loan_route(loan_id):
     }), 200
 
 
-@loans_bp.route("/<int:loan_id>", methods=["GET"])
-@require_token
-def get_loan_route(loan_id):
-    loan = get_loan(loan_id)
+@loans_bp.route("/<int:loan_id>", methods=["GET"], endpoint="get_loan")
+def get_loan(loan_id):
+    loan = get_loan_service(loan_id)
     if not loan:
         return jsonify({"error": "Loan not found"}), 404
     return jsonify({
@@ -49,10 +51,8 @@ def get_loan_route(loan_id):
     }), 200
 
 
-@loans_bp.route("", methods=["GET"])
-@require_token
+@loans_bp.route("", methods=["GET"], endpoint="list_loans")
 def list_loans():
-    from models.loan import Loan
     loans = Loan.query.all()
     return jsonify({
         "loans": [loan.to_dict() for loan in loans],

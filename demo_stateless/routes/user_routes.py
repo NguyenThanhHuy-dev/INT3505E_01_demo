@@ -1,3 +1,4 @@
+#user_routes.py
 from flask import Blueprint, request, jsonify, url_for
 from database import db
 from models.user import User
@@ -6,7 +7,7 @@ from utils.hateoas import generate_user_links
 
 users_bp = Blueprint("users_bp", __name__)
 
-@users_bp.route("", methods=["POST"])
+@users_bp.route("", methods=["POST"], endpoint="create_user")
 def create_user():
     data = request.get_json() or {}
     name = data.get("name")
@@ -21,10 +22,10 @@ def create_user():
     return jsonify({
         "message": "User created",
         "user": user.to_dict(),
-        "links": generate_user_links(user.id)
+        "_links": generate_user_links(user.id)
     }), 201
 
-@users_bp.route("/<int:user_id>", methods=["GET"])
+@users_bp.route("/<int:user_id>", methods=["GET"], endpoint="get_user")
 def get_user(user_id):
     user = User.query.get(user_id)
     if not user:
@@ -33,18 +34,18 @@ def get_user(user_id):
     return jsonify({
         "user": user.to_dict(),
         "loans": borrowed,
-        "links": generate_user_links(user.id)
+        "_links": generate_user_links(user.id)
     }), 200
 
-@users_bp.route("", methods=["GET"])
+@users_bp.route("", methods=["GET"], endpoint="list_users")
 def list_users():
     users = User.query.all()
     return jsonify({
         "users": [u.to_dict() for u in users],
-        "_links": generate_user_links
+        "_links": generate_user_links()
     }), 200
-    
-@users_bp.route("/<int:user_id>", methods=["PUT"])
+
+@users_bp.route("/<int:user_id>", methods=["PUT"], endpoint="update_user")
 def update_user(user_id):
     data = request.get_json() or {}
     user = User.query.get(user_id)
@@ -61,10 +62,10 @@ def update_user(user_id):
     return jsonify({
         "message": "User updated",
         "user": user.to_dict(),
-        "links": generate_user_links(user.id)
+        "_links": generate_user_links(user.id)
     }), 200
 
-@users_bp.route("/<int:user_id>", methods=["DELETE"])
+@users_bp.route("/<int:user_id>", methods=["DELETE"], endpoint="delete_user")
 def delete_user(user_id):
     user = User.query.get(user_id)
     if not user:
@@ -75,5 +76,5 @@ def delete_user(user_id):
     db.session.commit()
     return jsonify({
         "message": "User deleted",
-        "links": generate_user_links()
+        "_links": generate_user_links()
     }), 200

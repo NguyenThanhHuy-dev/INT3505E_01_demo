@@ -12,13 +12,7 @@ class User(db.Model):
     role = db.Column(db.String(20), default="reader", nullable=False)
     registered_at = db.Column(db.DateTime, default=datetime.now)
 
-    api_token = db.Column(db.String(64), unique=True, nullable=True)  # NEW FIELD
-
     loans = db.relationship("Loan", back_populates="user", cascade="all, delete-orphan")
-
-    def generate_token(self):
-        self.api_token = secrets.token_hex(32)
-        return self.api_token
 
     def to_dict(self):
         return {
