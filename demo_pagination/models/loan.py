@@ -1,6 +1,6 @@
 from database import db
 from datetime import datetime, timedelta
-from utils.hateoas import generate_loan_links
+from api.v1.hateoas import generate_loan_links
 
 class Loan(db.Model):
     __tablename__ = "loans"

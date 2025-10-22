@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, url_for
 from services.loan_service import borrow_book, return_book, get_loan
-from utils.hateoas import generate_loan_links
+from api.v1.hateoas import generate_loan_links
 
 loans_bp = Blueprint("loans_bp", __name__)
 

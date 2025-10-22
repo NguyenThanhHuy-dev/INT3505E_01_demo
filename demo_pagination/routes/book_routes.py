@@ -1,7 +1,7 @@
 from flask import Blueprint, make_response, request, jsonify, url_for
 from services.book_service import create_book, get_books_paginated, get_book, update_book, delete_book, get_books_offset, get_books_cursor
 from utils.cache import generate_etag
-from utils.hateoas import generate_book_links
+from api.v1.hateoas import generate_book_links
 
 books_bp = Blueprint("books_bp", __name__)
 

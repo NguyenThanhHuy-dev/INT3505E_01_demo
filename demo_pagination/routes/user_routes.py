@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify, url_for
 from database import db
 from models.user import User
 from models.book import Book
-from utils.hateoas import generate_user_links
+from api.v1.hateoas import generate_user_links
 
 users_bp = Blueprint("users_bp", __name__)
 

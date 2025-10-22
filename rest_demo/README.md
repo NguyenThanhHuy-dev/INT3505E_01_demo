@@ -1,1 +1,0 @@
-4 demo 3/4 nguyên tắc trong rest, ngoại trừ nguyên tắc stateless được demo ở folder khác
