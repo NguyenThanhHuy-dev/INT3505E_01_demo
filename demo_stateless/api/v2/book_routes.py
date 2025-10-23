@@ -1,7 +1,8 @@
 #v2/book_routes.py
 from flask import Blueprint, make_response, request, jsonify, url_for
 from utils.cache import generate_etag
-from api.v1.hateoas import generate_book_links
+from api.v2.hateoas import generate_book_links
+from flask_jwt_extended import jwt_required
 from services.book_service import (
     create_book as create_book_service,
     get_books_paginated,
@@ -14,9 +15,10 @@ from services.book_service import (
 
 
 
-books_bp = Blueprint("v1_books_bp", __name__)
+books_bp = Blueprint("v2_books_bp", __name__)
 
 @books_bp.route("", methods=["GET"], endpoint="list_books")
+@jwt_required()
 def list_books():
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 10))
@@ -35,6 +37,7 @@ def list_books():
 
 
 @books_bp.route("", methods=["POST"], endpoint="create_book")
+@jwt_required()
 def create_book():
     data = request.get_json() or {}
     book = create_book_service(data)
@@ -47,6 +50,7 @@ def create_book():
 
 
 @books_bp.route("/<int:book_id>", methods=["GET"], endpoint="get_book")
+@jwt_required()
 def get_book(book_id):
     book = get_book_service(book_id)
     if not book:
@@ -71,6 +75,7 @@ def get_book(book_id):
     return resp, 200
 
 @books_bp.route("/offset", methods=["GET"], endpoint="list_books_offset")
+@jwt_required()
 def list_books_offset():
     offset = int(request.args.get("offset", 0))
     limit = int(request.args.get("limit", 10))
@@ -88,6 +93,7 @@ def list_books_offset():
     return jsonify(payload), 200
 
 @books_bp.route("/cursor", methods=["GET"], endpoint="list_books_cursor")
+@jwt_required()
 def list_books_cursor():
     cursor = request.args.get("cursor", None, type=int)
     limit = int(request.args.get("limit", 10))
@@ -106,6 +112,7 @@ def list_books_cursor():
 
 
 @books_bp.route("/<int:book_id>", methods=["PUT"], endpoint="update_book")
+@jwt_required()
 def update_book(book_id):
     data = request.get_json() or {}
     book = update_book_service(book_id, data)
@@ -119,6 +126,7 @@ def update_book(book_id):
 
 
 @books_bp.route("/<int:book_id>", methods=["DELETE"], endpoint="delete_book")
+@jwt_required()
 def delete_book(book_id):
     ok = delete_book_service(book_id)
     if not ok:

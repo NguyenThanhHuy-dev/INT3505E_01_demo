@@ -1,16 +1,18 @@
 # loan_routes.py
 from flask import Blueprint, request, jsonify
-from api.v1.hateoas import generate_loan_links
+from api.v2.hateoas import generate_loan_links
 from services.loan_service import (
     borrow_book as borrow_book_service,
     return_book as return_book_service,
     get_loan as get_loan_service
 )
 from models.loan import Loan
+from flask_jwt_extended import jwt_required
 
-loans_bp = Blueprint("v1_loans_bp", __name__)
+loans_bp = Blueprint("v2_loans_bp", __name__)
 
 @loans_bp.route("", methods=["POST"], endpoint="create_loan")
+@jwt_required()
 def create_loan():
     data = request.get_json() or {}
     user_id = data.get("user_id")
@@ -29,6 +31,7 @@ def create_loan():
 
 
 @loans_bp.route("/<int:loan_id>/return", methods=["PUT"], endpoint="return_loan")
+@jwt_required()
 def return_loan(loan_id):
     res = return_book_service(loan_id)
     if isinstance(res, dict) and "error" in res:
@@ -41,6 +44,7 @@ def return_loan(loan_id):
 
 
 @loans_bp.route("/<int:loan_id>", methods=["GET"], endpoint="get_loan")
+@jwt_required()
 def get_loan(loan_id):
     loan = get_loan_service(loan_id)
     if not loan:
@@ -52,6 +56,7 @@ def get_loan(loan_id):
 
 
 @loans_bp.route("", methods=["GET"], endpoint="list_loans")
+@jwt_required()
 def list_loans():
     loans = Loan.query.all()
     return jsonify({
