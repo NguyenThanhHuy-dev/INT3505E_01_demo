@@ -5,9 +5,9 @@ from models.user import User
 from models.book import Book
 from api.v1.hateoas import generate_user_links
 
-users_bp = Blueprint("v1_users_bp", __name__)
+users_v1_bp = Blueprint("v1_users_bp", __name__)
 
-@users_bp.route("", methods=["POST"], endpoint="create_user")
+@users_v1_bp.route("", methods=["POST"], endpoint="create_user")
 def create_user():
     data = request.get_json() or {}
     name = data.get("name")
@@ -25,7 +25,7 @@ def create_user():
         "_links": generate_user_links(user.id)
     }), 201
 
-@users_bp.route("/<int:user_id>", methods=["GET"], endpoint="get_user")
+@users_v1_bp.route("/<int:user_id>", methods=["GET"], endpoint="get_user")
 def get_user(user_id):
     user = User.query.get(user_id)
     if not user:
@@ -37,7 +37,7 @@ def get_user(user_id):
         "_links": generate_user_links(user.id)
     }), 200
 
-@users_bp.route("", methods=["GET"], endpoint="list_users")
+@users_v1_bp.route("", methods=["GET"], endpoint="list_users")
 def list_users():
     users = User.query.all()
     return jsonify({
@@ -45,7 +45,7 @@ def list_users():
         "_links": generate_user_links()
     }), 200
 
-@users_bp.route("/<int:user_id>", methods=["PUT"], endpoint="update_user")
+@users_v1_bp.route("/<int:user_id>", methods=["PUT"], endpoint="update_user")
 def update_user(user_id):
     data = request.get_json() or {}
     user = User.query.get(user_id)
@@ -65,7 +65,7 @@ def update_user(user_id):
         "_links": generate_user_links(user.id)
     }), 200
 
-@users_bp.route("/<int:user_id>", methods=["DELETE"], endpoint="delete_user")
+@users_v1_bp.route("/<int:user_id>", methods=["DELETE"], endpoint="delete_user")
 def delete_user(user_id):
     user = User.query.get(user_id)
     if not user:

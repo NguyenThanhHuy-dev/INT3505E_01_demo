@@ -14,9 +14,9 @@ from services.book_service import (
 
 
 
-books_bp = Blueprint("v1_books_bp", __name__)
+books_v1_bp = Blueprint("v1_books_bp", __name__)
 
-@books_bp.route("", methods=["GET"], endpoint="list_books")
+@books_v1_bp.route("", methods=["GET"], endpoint="list_books")
 def list_books():
     page = int(request.args.get("page", 1))
     per_page = int(request.args.get("per_page", 10))
@@ -34,7 +34,7 @@ def list_books():
     return jsonify(payload), 200
 
 
-@books_bp.route("", methods=["POST"], endpoint="create_book")
+@books_v1_bp.route("", methods=["POST"], endpoint="create_book")
 def create_book():
     data = request.get_json() or {}
     book = create_book_service(data)
@@ -46,7 +46,7 @@ def create_book():
     return jsonify(resp), 201
 
 
-@books_bp.route("/<int:book_id>", methods=["GET"], endpoint="get_book")
+@books_v1_bp.route("/<int:book_id>", methods=["GET"], endpoint="get_book")
 def get_book(book_id):
     book = get_book_service(book_id)
     if not book:
@@ -70,7 +70,7 @@ def get_book(book_id):
     
     return resp, 200
 
-@books_bp.route("/offset", methods=["GET"], endpoint="list_books_offset")
+@books_v1_bp.route("/offset", methods=["GET"], endpoint="list_books_offset")
 def list_books_offset():
     offset = int(request.args.get("offset", 0))
     limit = int(request.args.get("limit", 10))
@@ -87,7 +87,7 @@ def list_books_offset():
     }
     return jsonify(payload), 200
 
-@books_bp.route("/cursor", methods=["GET"], endpoint="list_books_cursor")
+@books_v1_bp.route("/cursor", methods=["GET"], endpoint="list_books_cursor")
 def list_books_cursor():
     cursor = request.args.get("cursor", None, type=int)
     limit = int(request.args.get("limit", 10))
@@ -105,7 +105,7 @@ def list_books_cursor():
     return jsonify(payload), 200
 
 
-@books_bp.route("/<int:book_id>", methods=["PUT"], endpoint="update_book")
+@books_v1_bp.route("/<int:book_id>", methods=["PUT"], endpoint="update_book")
 def update_book(book_id):
     data = request.get_json() or {}
     book = update_book_service(book_id, data)
@@ -118,7 +118,7 @@ def update_book(book_id):
     }), 200
 
 
-@books_bp.route("/<int:book_id>", methods=["DELETE"], endpoint="delete_book")
+@books_v1_bp.route("/<int:book_id>", methods=["DELETE"], endpoint="delete_book")
 def delete_book(book_id):
     ok = delete_book_service(book_id)
     if not ok:
