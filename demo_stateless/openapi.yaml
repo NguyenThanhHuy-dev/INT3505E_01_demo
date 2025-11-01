@@ -60,6 +60,27 @@ paths:
         "401":
           description: Token không hợp lệ hoặc đã hết hạn
 
+  /auth/refresh:
+    post:
+      summary: Làm mới Access Token bằng Refresh Token
+      description: >
+        Dùng Refresh Token hợp lệ để lấy Access Token mới mà không cần đăng nhập lại.
+      security:
+        - bearerAuth: []   # cần gửi Refresh Token trong header Authorization
+      responses:
+        "200":
+          description: Cấp lại Access Token mới
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+        "401":
+          description: Refresh Token không hợp lệ hoặc đã hết hạn
+
+
   /auth/me:
     get:
       summary: Lấy thông tin người dùng hiện tại
@@ -318,8 +339,11 @@ components:
       properties:
         access_token:
           type: string
+        refresh_token:
+          type: string
         user:
           $ref: "#/components/schemas/User"
+
 
     User:
       type: object

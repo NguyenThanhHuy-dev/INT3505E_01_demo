@@ -44,7 +44,7 @@ def create_app(config_object=Config):
     register_error_handlers(app)
 
     # --- Swagger UI setup ---
-    SWAGGER_URL = '/api/docs'
+    SWAGGER_URL = '/api/v2/docs'
     API_URL = '/api/openapi.yaml'
     
     swagger_ui_blueprint = get_swaggerui_blueprint(

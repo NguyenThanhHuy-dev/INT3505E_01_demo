@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import (
     create_access_token,
+    create_refresh_token,
     jwt_required,
-    get_jwt_identity
+    get_jwt_identity,
+    get_jwt
 )
 from datetime import timedelta
 from models.user import User
@@ -48,9 +50,19 @@ def login():
         return jsonify({"error": "Invalid credentials"}), 401
 
 
-    token = create_access_token(identity=user.id, expires_delta=timedelta(hours=2))
+    # token = create_access_token(identity=str(user.id), expires_delta=timedelta(minutes=1))
+    access_token = create_access_token(
+        identity=str(user.id),
+        expires_delta=timedelta(minutes=1)
+    )
+    refresh_token = create_refresh_token(
+        identity=str(user.id),
+        expires_delta=timedelta(minutes=30)
+    )
+
     return jsonify({
-        "access_token": token,
+        "access_token": access_token,
+        "refresh_token": refresh_token,
         "user": user.to_dict()
     }), 200
 
@@ -59,16 +71,33 @@ def login():
 @auth_bp.route("/me", methods=["GET"])
 @jwt_required()
 def profile():
-    current_user_id = get_jwt_identity()
+    current_user_id = int(get_jwt_identity())
     user = User.query.get(current_user_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
     return jsonify(user.to_dict()), 200
 
-# ✅ LOGOUT (revoke token)
+
 @auth_bp.route("/logout", methods=["POST"])
-@jwt_required()
+@jwt_required(verify_type=False)  # chấp nhận cả access và refresh
 def logout():
     jti = get_jwt()["jti"]
     jwt_blacklist.add(jti)
-    return jsonify({"message": "Successfully logged out"}), 200
+    token_type = get_jwt()["type"]
+    return jsonify({
+        "message": f"{token_type.capitalize()} token revoked successfully"
+    }), 200
+
+
+
+@auth_bp.route("/refresh", methods=["POST"])
+@jwt_required(refresh=True)  # 👈 chỉ cho phép refresh token
+def refresh():
+    current_user_id = get_jwt_identity()
+    new_access_token = create_access_token(
+        identity=current_user_id,
+        expires_delta=timedelta(minutes=1)
+    )
+    return jsonify({
+        "access_token": new_access_token
+    }), 200
