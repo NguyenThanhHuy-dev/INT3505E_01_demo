@@ -1,0 +1,200 @@
+openapi: 3.0.0
+info:
+  title: Product API
+  description: API quản lý sản phẩm (demo cho buổi 7)
+  version: 1.0.0
+servers:
+- url: http://localhost:3000
+  description: Local server
+tags:
+- name: Products
+  description: Các thao tác CRUD liên quan đến sản phẩm
+paths:
+  /products:
+    get:
+      tags:
+      - Products
+      summary: Lấy danh sách sản phẩm
+      operationId: getProducts
+      responses:
+        "200":
+          description: Danh sách sản phẩm
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+                x-content-type: application/json
+      x-swagger-router-controller: Products
+    post:
+      tags:
+      - Products
+      summary: Tạo sản phẩm mới
+      operationId: createProduct
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+        required: true
+      responses:
+        "201":
+          description: Sản phẩm đã được tạo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        "400":
+          description: Dữ liệu đầu vào không hợp lệ
+      x-swagger-router-controller: Products
+  /products/{id}:
+    get:
+      tags:
+      - Products
+      summary: Lấy chi tiết sản phẩm theo ID
+      operationId: getProductById
+      parameters:
+      - name: id
+        in: path
+        description: ID của sản phẩm (Mongo ObjectId)
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Chi tiết sản phẩm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        "404":
+          description: Không tìm thấy sản phẩm
+      x-swagger-router-controller: Products
+    put:
+      tags:
+      - Products
+      summary: Cập nhật toàn bộ thông tin sản phẩm
+      operationId: updateProduct
+      parameters:
+      - name: id
+        in: path
+        description: ID của sản phẩm
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+        required: true
+      responses:
+        "200":
+          description: Sản phẩm đã được cập nhật
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        "404":
+          description: Không tìm thấy sản phẩm
+      x-swagger-router-controller: Products
+    delete:
+      tags:
+      - Products
+      summary: Xóa sản phẩm
+      operationId: deleteProduct
+      parameters:
+      - name: id
+        in: path
+        description: ID của sản phẩm
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Sản phẩm đã được xóa
+        "404":
+          description: Không tìm thấy sản phẩm
+      x-swagger-router-controller: Products
+    patch:
+      tags:
+      - Products
+      summary: Cập nhật một phần thông tin sản phẩm
+      operationId: partialUpdateProduct
+      parameters:
+      - name: id
+        in: path
+        description: ID của sản phẩm
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdate'
+        required: true
+      responses:
+        "200":
+          description: Sản phẩm đã được cập nhật một phần
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        "404":
+          description: Không tìm thấy sản phẩm
+      x-swagger-router-controller: Products
+components:
+  schemas:
+    Product:
+      required:
+      - id
+      - name
+      - price
+      type: object
+      properties:
+        id:
+          type: string
+          description: Mã sản phẩm (Mongo ObjectId)
+          readOnly: true
+        name:
+          type: string
+        price:
+          type: number
+        description:
+          type: string
+      example:
+        price: 0.80082819046101150206595775671303272247314453125
+        name: name
+        description: description
+        id: id
+    ProductInput:
+      required:
+      - name
+      - price
+      type: object
+      properties:
+        name:
+          type: string
+        price:
+          type: number
+        description:
+          type: string
+    ProductUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        price:
+          type: number
+        description:
+          type: string

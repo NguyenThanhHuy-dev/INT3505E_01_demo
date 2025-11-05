@@ -1,0 +1,21 @@
+{
+  "name": "product-api",
+  "version": "1.0.0",
+  "description": "API quản lý sản phẩm (demo cho buổi 7)",
+  "main": "index.js",
+  "scripts": {
+    "prestart": "npm install",
+    "start": "node index.js"
+  },
+  "keywords": [
+    "swagger"
+  ],
+  "license": "Unlicense",
+  "private": true,
+  "dependencies": {
+    "connect": "^3.2.0",
+    "js-yaml": "^3.3.0",
+    "mongoose": "^8.19.3",
+    "oas3-tools": "^2.2.3"
+  }
+}
