@@ -1,0 +1,149 @@
+openapi: 3.1.0
+info:
+  title: Product API
+  version: 1.0.0
+  description: API quản lý sản phẩm (demo cho buổi 7 - Triển khai Backend Service)
+servers:
+  - url: http://localhost:3000
+    description: Local server
+tags:
+  - name: Products
+    description: Các thao tác CRUD liên quan đến sản phẩm
+paths:
+  /products:
+    get:
+      tags: [ Products ]
+      summary: Lấy danh sách sản phẩm
+      operationId: getProducts
+      responses:
+        '200':
+          description: Danh sách sản phẩm
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+    post:
+      tags: [ Products ]
+      summary: Tạo sản phẩm mới
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '201':
+          description: Sản phẩm đã được tạo thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Dữ liệu đầu vào không hợp lệ
+  /products/{id}:
+    get:
+      tags: [ Products ]
+      summary: Lấy chi tiết sản phẩm theo ID
+      operationId: getProductById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID của sản phẩm (Mongo ObjectId)
+          schema:
+            type: string
+            example: 6744adac8b6e1b0020a7f999
+      responses:
+        '200':
+          description: Chi tiết sản phẩm
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Không tìm thấy sản phẩm
+    put:
+      tags: [ Products ]
+      summary: Cập nhật thông tin sản phẩm
+      operationId: updateProduct
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID của sản phẩm (Mongo ObjectId)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '200':
+          description: Sản phẩm đã được cập nhật
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Không tìm thấy sản phẩm
+    delete:
+      tags: [ Products ]
+      summary: Xóa sản phẩm
+      operationId: deleteProduct
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID của sản phẩm (Mongo ObjectId)
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Sản phẩm đã được xóa
+        '404':
+          description: Không tìm thấy sản phẩm
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 6744adac8b6e1b0020a7f999
+          description: Mã sản phẩm (Mongo ObjectId)
+          readOnly: true
+        name:
+          type: string
+          example: iPhone 15
+          description: Tên sản phẩm
+        price:
+          type: number
+          example: 25000000
+          description: Giá sản phẩm (VNĐ)
+        description:
+          type: string
+          example: Điện thoại cao cấp của Apple
+      required:
+        - id
+        - name
+        - price
+    ProductInput:
+      type: object
+      properties:
+        name:
+          type: string
+          example: iPhone 15
+        price:
+          type: number
+          example: 25000000
+        description:
+          type: string
+          example: Điện thoại cao cấp của Apple
+      required:
+        - name
+        - price
