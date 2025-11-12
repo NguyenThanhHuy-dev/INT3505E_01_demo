@@ -1,3 +1,5 @@
-# soa_demo
+# exercise_demo
+Là folder chính demo cho bài tập soa trên lớp
 
-Demo 3 cách phân trang với các endpoint riêng biệt, đáp ứng 3/4 quy tắc restful quang trọng được yêu cầu (ngoại trừ quy tắc stateless không được demo ở đây)
+# Test using newman
+(base) thanhhuy@controller:~/Documents/INT3505E_01_demo/demo_stateless$ newman run Library_API_v2_Tests.postman_collection.json -e Library_Local.postman_environment.json
