@@ -1,7 +1,5 @@
 const mongoose = require('mongoose');
 
-// Schema này định nghĩa cấu trúc của document trong MongoDB
-// Nó nên khớp với các schema trong OpenAPI
 const ProductSchema = new mongoose.Schema(
   {
     name: {
@@ -14,16 +12,13 @@ const ProductSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      required: false, // Giống trong OpenAPI, description là không bắt buộc
+      required: false,
     },
   },
   {
-    timestamps: true, // Tự động thêm createdAt và updatedAt
-    versionKey: false, // Không thêm trường __v (version)
+    timestamps: true,
+    versionKey: false,
 
-    // Tùy chọn này rất quan trọng
-    // Nó tự động biến _id (của Mongo) thành id (của OpenAPI)
-    // và xóa _id khi trả về JSON
     toJSON: {
       virtuals: true,
       transform(doc, ret) {
