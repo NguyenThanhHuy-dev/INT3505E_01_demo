@@ -53,8 +53,8 @@ def create_book():
 @jwt_required()
 def get_book(book_id):
     book = get_book_service(book_id)
-    if not book:
-        return jsonify({"error": "Book not found"}), 404
+    # if not book:
+    #     return jsonify({"error": "Book not found"}), 404
     
     
     book_data = book.to_dict()
@@ -116,8 +116,8 @@ def list_books_cursor():
 def update_book(book_id):
     data = request.get_json() or {}
     book = update_book_service(book_id, data)
-    if not book:
-        return jsonify({"error": "Book not found"}), 404
+    # if not book:
+    #     return jsonify({"error": "Book not found"}), 404
     return jsonify({
         "message": "Book updated",
         "book": book.to_dict(),

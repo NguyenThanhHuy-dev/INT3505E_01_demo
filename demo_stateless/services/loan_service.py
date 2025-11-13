@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 from utils.errors import ConflictError, NotFoundError
 
+
 def borrow_book(user_id, book_id, days=14):
     user = User.query.get(user_id)
     book = Book.query.get(book_id)
@@ -19,6 +20,7 @@ def borrow_book(user_id, book_id, days=14):
     db.session.add(loan)
     db.session.commit()
     return loan
+
 
 def return_book(loan_id):
     loan = Loan.query.get(loan_id)
@@ -43,3 +45,8 @@ def get_loan(loan_id):
     if not loan:
         raise NotFoundError("Loan not found")
     return loan
+
+
+def get_all_loans():
+    # Lấy danh sách tất cả các lượt mượn."
+    return Loan.query.all()

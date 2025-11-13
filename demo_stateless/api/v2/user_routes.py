@@ -1,24 +1,24 @@
-#user_routes.py
-from flask import Blueprint, request, jsonify, url_for
-from database import db
-from models.user import User
-from models.book import Book
+from flask import Blueprint, request, jsonify
 from api.v2.hateoas import generate_user_links
+from services.user_service import (
+    create_user_basic,
+    get_user_by_id,
+    get_all_users,
+    update_user_details,
+    delete_user_by_id
+)
+# Lưu ý: @jwt_required() vẫn cần được thêm vào nếu bạn muốn bảo vệ các route này
+# Tôi tạm bỏ qua để tập trung vào logic refactor
 
 users_bp = Blueprint("v2_users_bp", __name__)
 
 @users_bp.route("", methods=["POST"], endpoint="create_user")
 def create_user():
     data = request.get_json() or {}
-    name = data.get("name")
-    email = data.get("email")
-    if not name or not email:
-        return jsonify({"error": "name and email required"}), 400
-    if User.query.filter_by(email=email).first():
-        return jsonify({"error": "email already registered"}), 400
-    user = User(name=name, email=email)
-    db.session.add(user)
-    db.session.commit()
+    # Logic nghiệp vụ đã được chuyển sang service
+    # Service sẽ tự raise lỗi 400, 409 nếu có
+    user = create_user_basic(data) 
+    
     return jsonify({
         "message": "User created",
         "user": user.to_dict(),
@@ -27,9 +27,9 @@ def create_user():
 
 @users_bp.route("/<int:user_id>", methods=["GET"], endpoint="get_user")
 def get_user(user_id):
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
+    # Service sẽ tự raise lỗi 404 nếu không tìm thấy
+    user = get_user_by_id(user_id) 
+    
     borrowed = [loan.to_dict() for loan in user.loans]
     return jsonify({
         "user": user.to_dict(),
@@ -39,7 +39,7 @@ def get_user(user_id):
 
 @users_bp.route("", methods=["GET"], endpoint="list_users")
 def list_users():
-    users = User.query.all()
+    users = get_all_users()
     return jsonify({
         "users": [u.to_dict() for u in users],
         "_links": generate_user_links()
@@ -48,17 +48,10 @@ def list_users():
 @users_bp.route("/<int:user_id>", methods=["PUT"], endpoint="update_user")
 def update_user(user_id):
     data = request.get_json() or {}
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    if "name" in data:
-        user.name = data["name"]
-    if "email" in data:
-        existing = User.query.filter_by(email=data["email"]).first()
-        if existing and existing.id != user_id:
-            return jsonify({"error": "Email already in use"}), 400
-        user.email = data["email"]
-    db.session.commit()
+    
+    # Service sẽ tự raise lỗi 404, 409 nếu có
+    user = update_user_details(user_id, data) 
+    
     return jsonify({
         "message": "User updated",
         "user": user.to_dict(),
@@ -67,13 +60,9 @@ def update_user(user_id):
 
 @users_bp.route("/<int:user_id>", methods=["DELETE"], endpoint="delete_user")
 def delete_user(user_id):
-    user = User.query.get(user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    if user.loans:
-        return jsonify({"error": "Cannot delete user with active loans"}), 400
-    db.session.delete(user)
-    db.session.commit()
+    # Service sẽ tự raise lỗi 404, 409 nếu có
+    delete_user_by_id(user_id) 
+    
     return jsonify({
         "message": "User deleted",
         "_links": generate_user_links()

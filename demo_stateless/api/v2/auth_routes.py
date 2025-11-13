@@ -7,30 +7,21 @@ from flask_jwt_extended import (
     get_jwt
 )
 from datetime import timedelta
-from models.user import User
-from database import db
-from flask_jwt_extended import jwt_required, get_jwt
 from utils.token_blocklist import jwt_blacklist
+from services.user_service import (
+    register_user, 
+    authenticate_user, 
+    get_user_by_id
+)
 
 auth_bp = Blueprint("v2_auth_bp", __name__)
 
-# REGISTER
 @auth_bp.route("/register", methods=["POST"])
 def register():
     data = request.get_json() or {}
-    name = data.get("name")
-    email = data.get("email")
-    password = data.get("password")
-
-    if not all([name, email, password]):
-        return jsonify({"error": "Missing fields"}), 400
-    if User.query.filter_by(email=email).first():
-        return jsonify({"error": "Email already registered"}), 400
-
-    user = User(name=name, email=email)
-    user.password = password  # simple example — should hash later
-    db.session.add(user)
-    db.session.commit()
+    
+    # Service sẽ tự raise lỗi 400, 409
+    user = register_user(data) 
 
     return jsonify({
         "message": "User registered successfully",
@@ -38,19 +29,13 @@ def register():
     }), 201
 
 
-# LOGIN
 @auth_bp.route("/login", methods=["POST"])
 def login():
     data = request.get_json() or {}
-    email = data.get("email")
-    password = data.get("password")
+    
+    # Service sẽ tự raise lỗi 400, 401
+    user = authenticate_user(data) 
 
-    user = User.query.filter_by(email=email).first()
-    if not user or not user.verify_password(password):
-        return jsonify({"error": "Invalid credentials"}), 401
-
-
-    # token = create_access_token(identity=str(user.id), expires_delta=timedelta(minutes=1))
     access_token = create_access_token(
         identity=str(user.id),
         expires_delta=timedelta(minutes=1)
@@ -67,19 +52,19 @@ def login():
     }), 200
 
 
-# PROFILE (protected)
 @auth_bp.route("/me", methods=["GET"])
 @jwt_required()
 def profile():
     current_user_id = int(get_jwt_identity())
-    user = User.query.get(current_user_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
+    
+    # Tái sử dụng service, tự raise 404
+    user = get_user_by_id(current_user_id) 
+    
     return jsonify(user.to_dict()), 200
 
 
 @auth_bp.route("/logout", methods=["POST"])
-@jwt_required(verify_type=False)  # chấp nhận cả access và refresh
+@jwt_required(verify_type=False)
 def logout():
     jti = get_jwt()["jti"]
     jwt_blacklist.add(jti)
@@ -89,9 +74,8 @@ def logout():
     }), 200
 
 
-
 @auth_bp.route("/refresh", methods=["POST"])
-@jwt_required(refresh=True)  # 👈 chỉ cho phép refresh token
+@jwt_required(refresh=True)
 def refresh():
     current_user_id = get_jwt_identity()
     new_access_token = create_access_token(
