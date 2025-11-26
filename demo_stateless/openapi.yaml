@@ -622,7 +622,7 @@ components:
         collection:
           type: string
           format: uri
-    
+
     # --- Auth ---
     RegisterRequest:
       type: object
@@ -669,7 +669,7 @@ components:
         registered_at:
           type: string
           format: date-time
-          
+
     UserResponse:
       type: object
       properties:
@@ -687,7 +687,7 @@ components:
           $ref: "#/components/schemas/User"
         _links:
           $ref: "#/components/schemas/Links"
-          
+
     UserDetailWithLoansResponse:
       type: object
       properties:
@@ -793,7 +793,7 @@ components:
           $ref: "#/components/schemas/Book"
         _links:
           $ref: "#/components/schemas/Links"
-          
+
     BookListResponse: # <-- SỬA: Schema chính xác
       type: object
       properties:
@@ -899,7 +899,7 @@ components:
           $ref: "#/components/schemas/Loan"
         _links:
           $ref: "#/components/schemas/Links"
-          
+
     LoanListResponse: # <-- MSTY
       type: object
       properties:
