@@ -1,0 +1,911 @@
+openapi: 3.1.0
+info:
+  title: Library Management API
+  version: 1.0.0
+  description: >
+    RESTful API cho hệ thống quản lý thư viện.
+    Hỗ trợ đăng ký, đăng nhập, quản lý người dùng, sách, và mượn/trả sách.
+
+servers:
+  - url: http://127.0.0.1:5000/api/v2
+    description: Local Flask Server
+
+paths:
+  # ======================================================
+  # Auth Routes (Không thay đổi, đã chuẩn)
+  # ======================================================
+  /auth/register:
+    post:
+      summary: Đăng ký tài khoản
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Đăng ký thành công
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          description: Thiếu thông tin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email đã tồn tại
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      summary: Đăng nhập và nhận JWT token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Đăng nhập thành công
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Sai thông tin đăng nhập
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      summary: Đăng xuất (thu hồi token)
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Đăng xuất thành công
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          description: Token không hợp lệ
+
+  /auth/refresh:
+    post:
+      summary: Làm mới Access Token
+      tags: [Auth]
+      security:
+        - bearerAuth: [] # Gửi Refresh Token
+      responses:
+        "200":
+          description: Cấp lại Access Token mới
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+        "401":
+          description: Refresh Token không hợp lệ
+
+  /auth/me:
+    get:
+      summary: Lấy thông tin người dùng hiện tại
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Thông tin người dùng
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User" # Trả về User object trực tiếp
+        "404":
+          description: Không tìm thấy người dùng
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ======================================================
+  # Book Routes (Đã sửa và bổ sung)
+  # ======================================================
+  /books:
+    get:
+      summary: Lấy danh sách sách (Pagination)
+      tags: [Books]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: author
+          schema:
+            type: string
+        - in: query
+          name: genre
+          schema:
+            type: string
+        - in: query # <-- SỬA: BỔ SUNG THAM SỐ
+          name: available
+          schema:
+            type: string
+            enum: [true, false]
+      responses:
+        "200":
+          description: Danh sách sách
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookListResponse" # SỬA: Dùng schema đúng
+    post:
+      summary: Thêm sách mới
+      tags: [Books]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookCreateRequest" # Schema này đã được sửa
+      responses:
+        "201":
+          description: Sách được tạo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookDetailResponse" # SỬA: Dùng schema đúng
+        "400":
+          description: Thiếu ISBN hoặc Title
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: ISBN đã tồn tại
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /books/offset: # <-- MỚI: BỔ SUNG ENDPOINT
+    get:
+      summary: Lấy danh sách sách (Offset/Limit)
+      tags: [Books]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: author
+          schema:
+            type: string
+        - in: query
+          name: genre
+          schema:
+            type: string
+        - in: query
+          name: available
+          schema:
+            type: string
+            enum: [true, false]
+      responses:
+        "200":
+          description: Danh sách sách
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookListOffsetResponse"
+
+  /books/cursor: # <-- MỚI: BỔ SUNG ENDPOINT
+    get:
+      summary: Lấy danh sách sách (Cursor)
+      tags: [Books]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: integer
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: author
+          schema:
+            type: string
+        - in: query
+          name: genre
+          schema:
+            type: string
+        - in: query
+          name: available
+          schema:
+            type: string
+            enum: [true, false]
+      responses:
+        "200":
+          description: Danh sách sách
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookListCursorResponse"
+
+  /books/{book_id}:
+    get:
+      summary: Lấy chi tiết sách
+      tags: [Books]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: book_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Chi tiết sách
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookDetailResponse" # SỬA: Dùng schema đúng
+        "404":
+          description: Không tìm thấy sách
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      summary: Cập nhật thông tin sách
+      tags: [Books]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: book_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookUpdateRequest" # Schema này đã được sửa
+      responses:
+        "200":
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookDetailResponse"
+        "404":
+          description: Không tìm thấy sách
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Xóa sách
+      tags: [Books]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: book_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Xóa thành công
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "404":
+          description: Không tìm thấy sách
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ======================================================
+  # User Routes (Đã sửa)
+  # ======================================================
+  /users:
+    get:
+      summary: Lấy danh sách người dùng
+      tags: [Users]
+      security: # <-- SỬA: BỔ SUNG BẢO MẬT
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Danh sách người dùng
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+    post:
+      summary: Tạo người dùng mới (Basic)
+      tags: [Users]
+      security: # <-- SỬA: BỔ SUNG BẢO MẬT
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreateRequest"
+      responses:
+        "201":
+          description: Người dùng được tạo
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDetailResponse"
+        "400":
+          description: Thiếu thông tin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email đã tồn tại
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{user_id}:
+    get:
+      summary: Xem thông tin người dùng
+      tags: [Users]
+      security: # <-- SỬA: BỔ SUNG BẢO MẬT
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Thông tin người dùng (kèm sách đã mượn)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDetailWithLoansResponse"
+        "404":
+          description: Không tìm thấy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      summary: Cập nhật người dùng
+      tags: [Users]
+      security: # <-- SỬA: BỔ SUNG BẢO MẬT
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdateRequest"
+      responses:
+        "200":
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDetailResponse"
+        "404":
+          description: Không tìm thấy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email đã tồn tại
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      summary: Xóa người dùng
+      tags: [Users]
+      security: # <-- SỬA: BỔ SUNG BẢO MẬT
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Xóa thành công
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "404":
+          description: Không tìm thấy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Không thể xóa user đang mượn sách
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ======================================================
+  # Loan Routes (Đã sửa)
+  # ======================================================
+  /loans:
+    get:
+      summary: Danh sách phiếu mượn
+      tags: [Loans]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Danh sách phiếu mượn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoanListResponse"
+    post:
+      summary: Mượn sách
+      tags: [Loans]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoanCreateRequest"
+      responses:
+        "201":
+          description: Tạo phiếu mượn thành công
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoanDetailResponse"
+        "404":
+          description: Không tìm thấy User hoặc Book
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Sách đã hết bản sao
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /loans/{loan_id}:
+    get:
+      summary: Xem chi tiết phiếu mượn
+      tags: [Loans]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: loan_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Thông tin phiếu mượn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoanDetailResponse"
+        "404":
+          description: Không tìm thấy phiếu mượn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    # SỬA: Xóa PUT từ đây vì path sai
+
+  /loans/{loan_id}/return: # <-- SỬA: Path đúng
+    put:
+      summary: Trả sách
+      tags: [Loans]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: loan_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Trả sách thành công
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoanDetailResponse"
+        "404":
+          description: Không tìm thấy phiếu mượn
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Sách đã được trả từ trước
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+# ======================================================
+# Components (Đã sửa và bổ sung)
+# ======================================================
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # --- Chung ---
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+    Links:
+      type: object
+      properties:
+        self:
+          type: string
+          format: uri
+        collection:
+          type: string
+          format: uri
+
+    # --- Auth ---
+    RegisterRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+      required: [name, email, password]
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required: [email, password]
+
+    LoginResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+
+    # --- User ---
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        registered_at:
+          type: string
+          format: date-time
+
+    UserResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+
+    UserDetailResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+        _links:
+          $ref: "#/components/schemas/Links"
+
+    UserDetailWithLoansResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        loans:
+          type: array
+          items:
+            $ref: "#/components/schemas/Loan"
+        _links:
+          $ref: "#/components/schemas/Links"
+
+    UserListResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        _links:
+          $ref: "#/components/schemas/Links"
+
+    UserCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+      required: [name, email]
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+
+    # --- Book ---
+    Book:
+      type: object
+      properties:
+        id:
+          type: integer
+        isbn: # <-- SỬA: BỔ SUNG
+          type: string
+        title:
+          type: string
+        author:
+          type: string
+        genre:
+          type: string
+        year:
+          type: integer
+        copies_total:
+          type: integer
+        copies_available:
+          type: integer
+        created_at: # <-- SỬA: BỔ SUNG
+          type: string
+          format: date-time
+
+    BookCreateRequest:
+      type: object
+      properties:
+        isbn: # <-- SỬA: BỔ SUNG
+          type: string
+        title:
+          type: string
+        author:
+          type: string
+        genre:
+          type: string
+        year:
+          type: integer
+        copies_total: # <-- SỬA: BỔ SUNG
+          type: integer
+      required: # <-- SỬA: BỔ SUNG
+        - isbn
+        - title
+
+    BookUpdateRequest:
+      type: object
+      properties:
+        isbn: # <-- SỬA: BỔ SUNG
+          type: string
+        title:
+          type: string
+        author:
+          type: string
+        genre:
+          type: string
+        year:
+          type: integer
+        copies_total:
+          type: integer
+
+    BookDetailResponse: # <-- SỬA: Schema chính xác
+      type: object
+      properties:
+        book:
+          $ref: "#/components/schemas/Book"
+        _links:
+          $ref: "#/components/schemas/Links"
+
+    BookListResponse: # <-- SỬA: Schema chính xác
+      type: object
+      properties:
+        books:
+          type: array
+          items:
+            $ref: "#/components/schemas/Book"
+        meta:
+          type: object
+          properties:
+            page:
+              type: integer
+            per_page:
+              type: integer
+            total:
+              type: integer
+            pages:
+              type: integer
+        _links:
+          $ref: "#/components/schemas/Links"
+
+    BookListOffsetResponse: # <-- MỚI
+      type: object
+      properties:
+        books:
+          type: array
+          items:
+            $ref: "#/components/schemas/Book"
+        meta:
+          type: object
+          properties:
+            offset:
+              type: integer
+            limit:
+              type: integer
+            total:
+              type: integer
+        _links:
+          $ref: "#/components/schemas/Links"
+
+    BookListCursorResponse: # <-- MỚI
+      type: object
+      properties:
+        books:
+          type: array
+          items:
+            $ref: "#/components/schemas/Book"
+        meta:
+          type: object
+          properties:
+            cursor:
+              type: integer
+              nullable: true
+            limit:
+              type: integer
+            next_cursor:
+              type: integer
+              nullable: true
+        _links:
+          $ref: "#/components/schemas/Links"
+
+    # --- Loan ---
+    LoanCreateRequest:
+      type: object
+      properties:
+        user_id:
+          type: integer
+        book_id:
+          type: integer
+        days:
+          type: integer
+          default: 14
+      required: [user_id, book_id]
+
+    Loan:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        book_id:
+          type: integer
+        status:
+          type: string
+        borrowed_at:
+          type: string
+          format: date-time
+        due_date:
+          type: string
+          format: date-time
+        returned_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    LoanDetailResponse: # <-- MỚI: Schema chính xác
+      type: object
+      properties:
+        message:
+          type: string
+        loan:
+          $ref: "#/components/schemas/Loan"
+        _links:
+          $ref: "#/components/schemas/Links"
+
+    LoanListResponse: # <-- MSTY
+      type: object
+      properties:
+        loans:
+          type: array
+          items:
+            $ref: "#/components/schemas/Loan"
+        _links:
+          $ref: "#/components/schemas/Links"

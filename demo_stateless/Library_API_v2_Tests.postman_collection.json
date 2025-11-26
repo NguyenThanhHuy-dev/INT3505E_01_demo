@@ -1,0 +1,402 @@
+{
+	"info": {
+		"_postman_id": "3fe86d5b-4b64-4ce9-b241-51387912581c",
+		"name": "Library API v2 Tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "40438055"
+	},
+	"item": [
+		{
+			"name": "Register user",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// 1. Kiểm tra Status Code",
+							"pm.test(\"Status code is 201 Created\", () => {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"// 2. SỬA LỖI: So sánh với biến Môi trường",
+							"pm.test(\"Response body chứa thông tin user chính xác\", () => {",
+							"    pm.expect(json.user).to.exist;",
+							"    // So sánh với biến \"name\" đã được set trong pre-request",
+							"    pm.expect(json.user.name).to.eql(pm.environment.get(\"name\"), \"Tên user không khớp\");",
+							"    // So sánh với biến \"email\" đã được set trong pre-request",
+							"    pm.expect(json.user.email).to.eql(pm.environment.get(\"email\"), \"Email user không khớp\");",
+							"});",
+							"",
+							"// 3. Kiểm tra bảo mật (Quan trọng)",
+							"pm.test(\"Response KHÔNG được chứa password\", () => {",
+							"    pm.expect(json.user).to.not.have.property(\"password\");",
+							"    pm.expect(json.user).to.not.have.property(\"password_hash\");",
+							"});",
+							"",
+							"// 4. Lưu biến để dùng cho các request sau",
+							"// Dòng này bây giờ sẽ chạy đúng",
+							"if (json.user && json.user.id) {",
+							"    pm.environment.set(\"user_id\", json.user.id);",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Tạo email ngẫu nhiên mỗi lần chạy",
+							"let timestamp = new Date().getTime();",
+							"pm.environment.set(\"email\", `testuser_${timestamp}@example.com`);",
+							"pm.environment.set(\"name\", \"Test User\");",
+							"pm.environment.set(\"password\", \"123456\");",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"{{name}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{base_url}}/auth/register"
+			},
+			"response": []
+		},
+		{
+			"name": "Error Register (Duplicate Email)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// 1. Kiểm tra Status Code (Mong đợi 409)",
+							"pm.test(\"Status code is 409 Conflict\", () => {",
+							"    pm.response.to.have.status(409);",
+							"});",
+							"",
+							"// 2. Kiểm tra thông báo lỗi",
+							"pm.test(\"Response có thông báo lỗi email đã tồn tại\", () => {",
+							"    const json = pm.response.json();",
+							"    pm.expect(json.error).to.eql(\"Email này đã được đăng ký\");",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"{{name}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{base_url}}/auth/register"
+			},
+			"response": []
+		},
+		{
+			"name": "Login user",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// 1. Kiểm tra Status Code",
+							"pm.test(\"Status code is 200 OK\", () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"const requestBody = JSON.parse(pm.request.body.raw);",
+							"",
+							"// 2. Kiểm tra response body",
+							"pm.test(\"Response chứa access_token và refresh_token\", () => {",
+							"    pm.expect(json.access_token).to.be.a(\"string\", \"access_token phải là string\");",
+							"    pm.expect(json.refresh_token).to.be.a(\"string\", \"refresh_token phải là string\");",
+							"    pm.expect(json.user.email).to.eql(requestBody.email, \"Email user không khớp\");",
+							"});",
+							"",
+							"// 3. Lưu biến (Giữ nguyên)",
+							"pm.environment.set(\"access_token\", json.access_token);",
+							"pm.environment.set(\"refresh_token\", json.refresh_token);"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{base_url}}/auth/login"
+			},
+			"response": []
+		},
+		{
+			"name": "Error Login (Wrong Password)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 401 Unauthorized\", () => {",
+							"    pm.response.to.have.status(401);",
+							"});",
+							"",
+							"pm.test(\"Response có thông báo sai thông tin\", () => {",
+							"    const json = pm.response.json();",
+							"    pm.expect(json.error).to.eql(\"Email hoặc mật khẩu không hợp lệ\");",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"password_sai_123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "{{base_url}}/auth/login"
+			},
+			"response": []
+		},
+		{
+			"name": "Get profile(me)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// 1. Kiểm tra Status Code",
+							"pm.test(\"Status code is 200 OK\", () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const json = pm.response.json();",
+							"",
+							"// 2. Lấy email đã đăng ký từ environment",
+							"const expectedEmail = pm.environment.get(\"email\");",
+							"",
+							"// 3. Kiểm tra xem API có trả về đúng user không",
+							"pm.test(\"Profile trả về đúng user đã đăng nhập\", () => {",
+							"    pm.expect(json.email).to.eql(expectedEmail, \"API trả về sai email user\");",
+							"    pm.expect(json.id).to.eql(parseInt(pm.environment.get(\"user_id\")), \"API trả về sai user ID\");",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"type": "text"
+					}
+				],
+				"url": "{{base_url}}/auth/me"
+			},
+			"response": []
+		},
+		{
+			"name": "Error Get Profile (No Token)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 401 Unauthorized\", () => {",
+							"    pm.response.to.have.status(401);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"url": "{{base_url}}/auth/me"
+			},
+			"response": []
+		},
+		{
+			"name": "Refresh Access Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", () => {",
+							"  pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const newToken = pm.response.json().access_token;",
+							"pm.environment.set(\"access_token\", newToken);",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{refresh_token}}",
+						"type": "text"
+					}
+				],
+				"url": "{{base_url}}/auth/refresh"
+			},
+			"response": []
+		},
+		{
+			"name": "Logout",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// 1. Kiểm tra Status Code",
+							"pm.test(\"Status code is 200 OK\", () => {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// 2. Kiểm tra thông báo",
+							"pm.test(\"Response có thông báo thu hồi token\", () => {",
+							"    const json = pm.response.json();",
+							"    pm.expect(json.message).to.contain(\"token revoked\");",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{access_token}}",
+						"type": "text"
+					}
+				],
+				"url": "{{base_url}}/auth/logout"
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "email",
+			"value": ""
+		},
+		{
+			"key": "password",
+			"value": ""
+		},
+		{
+			"key": "name",
+			"value": ""
+		}
+	]
+}

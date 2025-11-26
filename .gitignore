@@ -1,0 +1,22 @@
+# --- Python Virtual Env (QUAN TRỌNG: Không bao giờ commit cái này) ---
+.venv/
+venv/
+env/
+ENV/
+
+# --- Python Cache & Compiled files ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Environment Variables ---
+.env
+.env.local
+
+# --- IDE settings ---
+.idea/
+.vscode/
+*.swp
+
+# --- Database ---
+*.sqlite3

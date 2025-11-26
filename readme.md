@@ -1,3 +1,3 @@
 - folder rest_demo: demo 3 nguyên tắc client-server, uniform interface, cacheable của Rest
 - folder demo_pagination: phiên bản nâng cấp của rest_demo, thêm các endpoint khác cho pagination
-- folder demo_stateless: phiên bản nâng cấp của demo_pagination: thêm stateless bảo vệ cho loanloan
+- folder demo_stateless: Folder chứa demo hiện tại của bài tập trên lớp
