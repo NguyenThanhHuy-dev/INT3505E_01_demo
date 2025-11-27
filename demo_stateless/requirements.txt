@@ -10,3 +10,4 @@ pytest-flask>=1.2
 flask-limiter
 prometheus-client
 python-json-logger
+flask-swagger-ui
