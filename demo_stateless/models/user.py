@@ -13,6 +13,8 @@ class User(db.Model):
     
     role = db.Column(db.String(20), default="reader", nullable=False)
     registered_at = db.Column(db.DateTime, default=datetime.now)
+    
+    webhook_url = db.Column(db.String(255), nullable=True)
 
     loans = db.relationship("Loan", back_populates="user", cascade="all, delete-orphan")
 
@@ -34,5 +36,6 @@ class User(db.Model):
             "name": self.name,
             "email": self.email,
             "role": self.role,
+            "webhook_url": self.webhook_url,
             "registered_at": self.registered_at.isoformat() if self.registered_at else None,
         }

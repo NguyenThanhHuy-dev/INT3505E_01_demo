@@ -11,3 +11,5 @@ flask-limiter
 prometheus-client
 python-json-logger
 flask-swagger-ui
+requests
+rich
