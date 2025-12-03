@@ -54,13 +54,13 @@ REQUEST_LATENCY = Histogram('http_request_duration_seconds', 'HTTP Request Laten
 def create_app(config_object=Config):
     app = Flask(__name__)
     app.config.from_object(config_object)
-    app.config["JWT_SECRET_KEY"] = "super-secret-key" # Lưu ý: Nên để trong biến môi trường
+    # app.config["JWT_SECRET_KEY"] = "super-secret-key"
 
     # --- Init các Extension ---
     db.init_app(app)
     migrate.init_app(app, db)
     jwt = JWTManager(app)
-    limiter.init_app(app)  # Kích hoạt Rate Limiter
+    limiter.init_app(app)
 
     # --- Middleware cho Monitoring & Logging ---
     @app.before_request
@@ -69,14 +69,13 @@ def create_app(config_object=Config):
 
     @app.after_request
     def record_metrics_and_log(response):
-        # Tính thời gian xử lý
         if hasattr(request, 'start_time'):
             resp_time = time.time() - request.start_time
         else:
             resp_time = 0
 
         # Ghi Metrics cho Prometheus
-        # Dùng request.url_rule để group các url giống nhau (ví dụ /users/<id>)
+
         endpoint = str(request.url_rule) if request.url_rule else "not_found"
         REQUEST_LATENCY.labels(endpoint=endpoint).observe(resp_time)
         REQUEST_COUNT.labels(
@@ -85,7 +84,6 @@ def create_app(config_object=Config):
             status=response.status_code
         ).inc()
 
-        # Ghi Audit Log (JSON)
         logger.info("Request processed", extra={
             'method': request.method,
             'path': request.path,
@@ -96,13 +94,11 @@ def create_app(config_object=Config):
         
         return response
 
-    # --- JWT Blocklist Check ---
     @jwt.token_in_blocklist_loader
     def check_if_token_revoked(jwt_header, jwt_payload):
         jti = jwt_payload["jti"]
         return jti in jwt_blacklist
 
-    # --- Register Blueprints ---
     app.register_blueprint(books_v1_bp, url_prefix='/api/v1/books')
     app.register_blueprint(users_v1_bp, url_prefix='/api/v1/users')
     app.register_blueprint(loans_v1_bp, url_prefix='/api/v1/loans')
@@ -114,7 +110,6 @@ def create_app(config_object=Config):
 
     register_error_handlers(app)
 
-    # --- Swagger UI setup ---
     SWAGGER_URL = '/api/v2/docs'
     API_URL = '/api/openapi.yaml'
     
@@ -132,7 +127,6 @@ def create_app(config_object=Config):
     # --- Endpoint Metrics cho Prometheus ---
     @app.route('/metrics')
     def metrics():
-        # Endpoint này để Prometheus server chọc vào lấy dữ liệu
         return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
 
     @app.route("/")
