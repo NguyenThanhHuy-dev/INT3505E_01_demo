@@ -1,3 +1,4 @@
+import requests
 from database import db
 from models.user import User
 from utils.errors import (
@@ -15,6 +16,7 @@ def register_user(data):
     name = data.get("name")
     email = data.get("email")
     password = data.get("password")
+    
 
     if not all([name, email, password]):
         raise BadRequestError("Tên, email, và mật khẩu là bắt buộc")
@@ -66,13 +68,11 @@ def get_all_users():
 
 
 def create_user_basic(data):
-    """
-    Xử lý logic tạo user cơ bản (từ user_routes).
-    LƯU Ý: Route này không set password, có thể bạn muốn
-    loại bỏ route này và chỉ dùng /auth/register.
-    """
+
     name = data.get("name")
     email = data.get("email")
+    
+    webhook_url = data.get("webhook_url")
 
     if not name or not email:
         raise BadRequestError("Tên và email là bắt buộc")
@@ -80,20 +80,20 @@ def create_user_basic(data):
     if User.query.filter_by(email=email).first():
         raise ConflictError("Email này đã được đăng ký")
 
-    user = User(name=name, email=email)
+    user = User(name=name, email=email, webhook_url=webhook_url)
     db.session.add(user)
     db.session.commit()
     return user
 
 
 def update_user_details(user_id, data):
-    """
-    Xử lý logic cập nhật người dùng (từ user_routes).
-    """
     user = get_user_by_id(user_id)  # Tái sử dụng hàm get_user_by_id
 
     if "name" in data:
         user.name = data["name"]
+        
+    if "webhook_url" in data:
+        user.webhook_url = data["webhook_url"]
 
     if "email" in data:
         new_email = data["email"]
@@ -101,6 +101,21 @@ def update_user_details(user_id, data):
         if existing and existing.id != user_id:
             raise ConflictError("Email này đã được sử dụng")
         user.email = new_email
+
+    if user.webhook_url:
+        try:
+            print(f"Dang gui webhook toi: {user.webhook_url}")
+            payload = {
+                "event": "USER_UPDATED",
+                "message": f"User {user.name} vừa cập nhật thông tin!",
+                "user_id": user.id,
+                "new_email": user.email
+            }
+            # Gửi POST request tới webhook_url của user
+            requests.post(user.webhook_url, json=payload, timeout=5)
+        except Exception as e:
+            # Nếu lỗi mạng hoặc link chết thì chỉ log ra, không làm crash app
+            print(f"Lỗi gửi webhook: {e}")
 
     db.session.commit()
     return user
